@@ -172,6 +172,7 @@ contract OrderList is IStructureInterface, BlastClaimWithYield {
         OrderInfo storage orderInfo = totalOrders[orderId];
         require(orderInfo.status == OrderStatus.Listing, "Order NOT in listing");
         require(msg.sender != orderInfo.askAddress, "Can NOT take your own order.");
+        require(orderInfo.askTime != block.timestamp, "Cant NOT take the order at one block");
         (bool exist, uint256 headOrderId) = listedOrders.getNextNode(0);
         require(exist && headOrderId == orderId, "NOT the head order");
 

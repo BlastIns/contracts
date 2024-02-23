@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 import "./BlastClaimWithYield.sol";
+import "./ISpread.sol";
 
 contract FomoAuction is BlastClaimWithYield {
 
@@ -30,11 +31,18 @@ contract FomoAuction is BlastClaimWithYield {
     uint256 public constant feeRate = 10;
     uint256 public constant PeriodPerRound = 24 * 3600;  // 24 hours
     uint256 public constant MinDuration = 5 * 60;    // 5 minutes
+    
+    ISpread public spreadInfo;
 
     event EnterNextRound(uint256 round);
     event Bid(address bidder, uint256 round, uint256 bidAmount);
 
-    constructor () BlastClaimWithYield(_msgSender()) {
+    constructor (address spread) BlastClaimWithYield(_msgSender()) {
+        spreadInfo = ISpread(spread);
+    }
+
+    function setSpread(address spread) external onlyOwner {
+        spreadInfo = ISpread(spread);
     }
 
     function startNextRound() external {
@@ -63,6 +71,7 @@ contract FomoAuction is BlastClaimWithYield {
     
     function bid() external payable {
         require(curRound > 0, "Not start");
+        require(address(spreadInfo) == address(0) || spreadInfo.spreadMap(msg.sender) != address(0), "Only referee can bid now.");
         AuctionInfo storage auctionInfo = roundAuctionMap[curRound];
         uint256 endTime = getEndTime(curRound);
         require(endTime > block.timestamp, "Current round end!");
